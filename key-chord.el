@@ -146,20 +146,19 @@ If COMMAND is nil, the key-chord is removed."
 (defun key-chord-lookup-key1 (keymap key)
   "Like lookup-key but no third arg and no numeric return value."
   (let ((res (lookup-key keymap key)))
-    (if (numberp res)
-        nil
-      res)))
+    (and (not (numberp res))
+         res)))
 
 (defun key-chord-lookup-key (key)
   "Lookup KEY in all current key maps."
   (let ((maps (current-minor-mode-maps))
         res)
     (while (and maps (not res))
-      (setq res (key-chord-lookup-key1 (car maps) key)
-            maps (cdr maps)))
+      (setq res (key-chord-lookup-key1 (car maps) key))
+      (setq maps (cdr maps)))
     (or res
-        (if (current-local-map)
-            (key-chord-lookup-key1 (current-local-map) key))
+        (and (current-local-map)
+             (key-chord-lookup-key1 (current-local-map) key))
         (key-chord-lookup-key1 (current-global-map) key))))
 
 (defun key-chord-describe ()
