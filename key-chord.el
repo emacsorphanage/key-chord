@@ -38,10 +38,12 @@ This should normally be a little longer than `key-chord-two-keys-delay'.")
 
 (defvar key-chord-in-macros t
   "If nil, don't expand key chords when executing keyboard macros.
-If non-nil, expand chord sequenses in macros, but only if a similar chord was
-entered during the last interactive macro recording. (This carries a bit of
-guesswork. We can't know for sure when executing whether two keys were
-typed quickly or slowly when recorded.)")
+
+If non-nil, expand chord sequenses in macros, but only if a
+similar chord was entered during the last interactive macro
+recording. (This carries a bit of guesswork. We can't know for
+sure when executing whether two keys were typed quickly or slowly
+when recorded.)")
 
 ;; Internal vars
 (defvar key-chord-mode nil)
@@ -59,13 +61,14 @@ typed quickly or slowly when recorded.)")
 ;;;###autoload
 (defun key-chord-mode (arg)
   "Toggle key chord mode.
-With positive ARG enable the mode. With zero or negative arg disable the mode.
-A key chord is two keys that are pressed simultaneously, or one key quickly
-pressed twice.
-\nSee functions `key-chord-define-global', `key-chord-define-local', and
-`key-chord-define' and variables `key-chord-two-keys-delay' and
-`key-chord-one-key-delay'."
 
+With positive ARG enable the mode. With zero or negative arg
+disable the mode.  A key chord is two keys that are pressed
+simultaneously, or one key quickly pressed twice.
+
+See functions `key-chord-define-global', `key-chord-define-local',
+and `key-chord-define' and variables `key-chord-two-keys-delay'
+and `key-chord-one-key-delay'."
   (interactive "P")
   (setq key-chord-mode (if arg
 			   (> (prefix-numeric-value arg) 0)
@@ -80,23 +83,32 @@ pressed twice.
 ;;;###autoload
 (defun key-chord-define-global (keys command)
   "Define a key-chord of the two keys in KEYS starting a COMMAND.
-\nKEYS can be a string or a vector of two elements. Currently only elements
-that corresponds to ascii codes in the range 32 to 126 can be used.
-\nCOMMAND can be an interactive function, a string, or nil.
+
+KEYS can be a string or a vector of two elements. Currently only
+elements that corresponds to ascii codes in the range 32 to 126
+can be used.
+
+COMMAND can be an interactive function, a string, or nil.
 If COMMAND is nil, the key-chord is removed.
-\nNote that KEYS defined locally in the current buffer will have precedence."
+
+Note that KEYS defined locally in the current buffer will have
+precedence."
   (interactive "sSet key chord globally (2 keys): \nCSet chord \"%s\" to command: ")
   (key-chord-define (current-global-map) keys command))
 
 ;;;###autoload
 (defun key-chord-define-local (keys command)
   "Locally define a key-chord of the two keys in KEYS starting a COMMAND.
-\nKEYS can be a string or a vector of two elements. Currently only elements
-that corresponds to ascii codes in the range 32 to 126 can be used.
-\nCOMMAND can be an interactive function, a string, or nil.
+
+KEYS can be a string or a vector of two elements. Currently only
+elements that corresponds to ascii codes in the range 32 to 126
+can be used.
+
+COMMAND can be an interactive function, a string, or nil.
 If COMMAND is nil, the key-chord is removed.
-\nThe binding goes in the current buffer's local map,
-which in most cases is shared with all other buffers in the same major mode."
+
+The binding goes in the current buffer's local map, which in most
+cases is shared with all other buffers in the same major mode."
   (interactive "sSet key chord locally (2 keys): \nCSet chord \"%s\" to command: ")
   (key-chord-define (current-local-map) keys command))
 
@@ -113,9 +125,12 @@ which in most cases is shared with all other buffers in the same major mode."
 ;;;###autoload
 (defun key-chord-define (keymap keys command)
   "Define in KEYMAP, a key-chord of the two keys in KEYS starting a COMMAND.
-\nKEYS can be a string or a vector of two elements. Currently only elements
-that corresponds to ascii codes in the range 32 to 126 can be used.
-\nCOMMAND can be an interactive function, a string, or nil.
+
+KEYS can be a string or a vector of two elements. Currently only
+elements that corresponds to ascii codes in the range 32 to 126
+can be used.
+
+COMMAND can be an interactive function, a string, or nil.
 If COMMAND is nil, the key-chord is removed."
   (if (/= 2 (length keys))
       (error "Key-chord keys must have two elements"))
@@ -150,8 +165,9 @@ If COMMAND is nil, the key-chord is removed."
 
 (defun key-chord-describe ()
   "List key chord bindings in a help buffer.
-\nTwo key chords will be listed twice and there will be Prefix Commands.
-Please ignore that."
+
+Two key chords will be listed twice and there will be Prefix
+Commands. Please ignore that."
   (interactive)
   (describe-bindings [key-chord]))
 
