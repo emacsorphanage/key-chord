@@ -30,21 +30,28 @@
 
 ;;; Code:
 
-(defvar key-chord-two-keys-delay 0.1    ; 0.05 or 0.1
-  "Max time delay between two key press to be considered a key chord.")
+(defgroup key-chord nil
+  "Map pairs of simultaneously pressed keys to commands."
+  :group 'bindings)
 
-(defvar key-chord-one-key-delay 0.2     ; 0.2 or 0.3 to avoid first autorepeat
+(defcustom key-chord-two-keys-delay 0.1
+  "Max time delay between two key press to be considered a key chord."
+  :type 'float)
+
+(defcustom key-chord-one-key-delay 0.2
   "Max time delay between two press of the same key to be considered a key chord.
-This should normally be a little longer than `key-chord-two-keys-delay'.")
+This should normally be a little longer than `key-chord-two-keys-delay'."
+  :type 'float)
 
-(defvar key-chord-in-macros t
+(defcustom key-chord-in-macros t
   "If nil, don't expand key chords when executing keyboard macros.
 
 If non-nil, expand chord sequenses in macros, but only if a
 similar chord was entered during the last interactive macro
 recording. (This carries a bit of guesswork. We can't know for
 sure when executing whether two keys were typed quickly or slowly
-when recorded.)")
+when recorded.)"
+  :type 'boolean)
 
 ;; Internal vars
 (defvar key-chord-mode nil)

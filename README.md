@@ -147,7 +147,6 @@ key-chord-input-method.
 - Save previous value of input-method-function? And call it?
 - input-method-function is reset in *info* buffers! What to do?
 - How to enter interactively command OR string in key-chord-define-global?
-- Customize public vars (defcustom).
 
 ## History
 
