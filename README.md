@@ -5,11 +5,6 @@ pressed keys to a command and for mapping the same key being pressed
 twice in quick succession to a command. Such bindings are called
 "key chords".
 
-## Compatibility
-
-Works with Emacs-20.3, 20.6, 20.7, 21.2, 21.4, 22.1 and 23.1
-Does not work with Emacs-19.31 nor XEmacs-20.4 and 21.4.
-
 ## Quick start
 
 Add to your ~/.emacs

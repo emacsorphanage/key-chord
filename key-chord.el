@@ -3,6 +3,7 @@
 ;; Copyright (C) 2003, 2005, 2008, 2012 David Andersson
 
 ;; Author: David Andersson <l.david.andersson(at)sverige.nu>
+;; Package-Requires: ((emacs "24"))
 ;; Keywords: keyboard chord input
 
 ;; This program is free software; you can redistribute it and/or
@@ -181,8 +182,7 @@ Commands. Please ignore that."
                 (not (memq first-char key-chord-in-last-kbd-macro))
               (when (bound-and-true-p eldoc-mode)
                 (eldoc-pre-command-refresh-echo-area))
-
-              (sit-for delay 0 'no-redisplay))
+              (sit-for delay 'no-redisplay))
             (progn
               (setq key-chord-last-unmatched nil)
               (list first-char))
