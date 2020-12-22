@@ -169,37 +169,37 @@ Commands. Please ignore that."
 
 (defun key-chord-input-method (first-char)
   "Input method controlled by key bindings with the prefix `key-chord'."
-  (if (and (not (eq first-char key-chord-last-unmatched))
-           (key-chord-lookup-key (vector 'key-chord first-char)))
-      (let ((delay (if (key-chord-lookup-key (vector 'key-chord first-char first-char))
-                       key-chord-one-key-delay
-                     ;; else
-                     key-chord-two-keys-delay)))
-        (if (if executing-kbd-macro
-                (not (memq first-char key-chord-in-last-kbd-macro))
-              (when (bound-and-true-p eldoc-mode)
-                (eldoc-pre-command-refresh-echo-area))
-              (sit-for delay 'no-redisplay))
-            (progn
-              (setq key-chord-last-unmatched nil)
-              (list first-char))
-          ;; else input-pending-p
-          (let* ((input-method-function nil)
-                 (next-char (read-event))
-                 (res (vector 'key-chord first-char next-char)))
-            (if (key-chord-lookup-key res)
-                (progn
-                  (setq key-chord-defining-kbd-macro
-                        (cons first-char key-chord-defining-kbd-macro))
-                  (list 'key-chord first-char next-char))
-              ;; else put back next-char and return first-char
-              (setq unread-command-events (cons next-char unread-command-events))
-              (if (eq first-char next-char)
-                  (setq key-chord-last-unmatched first-char))
-              (list first-char)))))
-    ;; else no key-chord keymap
+  (cond
+   ((and (not (eq first-char key-chord-last-unmatched))
+         (key-chord-lookup-key (vector 'key-chord first-char)))
+    (let ((delay (if (key-chord-lookup-key
+                      (vector 'key-chord first-char first-char))
+                     key-chord-one-key-delay
+                   key-chord-two-keys-delay)))
+      (cond ((if executing-kbd-macro
+                 (not (memq first-char key-chord-in-last-kbd-macro))
+               (when (bound-and-true-p eldoc-mode)
+                 (eldoc-pre-command-refresh-echo-area))
+               (sit-for delay 'no-redisplay))
+             (setq key-chord-last-unmatched nil)
+             (list first-char))
+            (t ; input-pending-p
+             (let* ((input-method-function nil)
+                    (next-char (read-event))
+                    (res (vector 'key-chord first-char next-char)))
+               (cond ((key-chord-lookup-key res)
+                      (setq key-chord-defining-kbd-macro
+                            (cons first-char key-chord-defining-kbd-macro))
+                      (list 'key-chord first-char next-char))
+                     (t ;put back next-char and return first-char
+                      (setq unread-command-events
+                            (cons next-char unread-command-events))
+                      (when (eq first-char next-char)
+                        (setq key-chord-last-unmatched first-char))
+                      (list first-char))))))))
+   (t ; no key-chord keymap
     (setq key-chord-last-unmatched first-char)
-    (list first-char)))
+    (list first-char))))
 
 (defun key-chord--start-kbd-macro (_append &optional _no-exec)
   (setq key-chord-defining-kbd-macro nil))
