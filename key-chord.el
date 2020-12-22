@@ -204,13 +204,13 @@ Commands. Please ignore that."
     (setq key-chord-last-unmatched first-char)
     (list first-char)))
 
-(require 'advice)
-
-(defadvice start-kbd-macro (after key-chord activate)
+(defun key-chord--start-kbd-macro (_append &optional _no-exec)
   (setq key-chord-defining-kbd-macro nil))
+(advice-add 'start-kbd-macro :after #'key-chord--start-kbd-macro)
 
-(defadvice end-kbd-macro (after key-chord activate)
+(defun key-chord--end-kbd-macro (&optional _repeat _loopfunc)
   (setq key-chord-in-last-kbd-macro key-chord-defining-kbd-macro))
+(advice-add 'end-kbd-macro :after #'key-chord--end-kbd-macro)
 
 (provide 'key-chord)
 ;; Local Variables:
