@@ -43,6 +43,14 @@
 This should normally be a little longer than `key-chord-two-keys-delay'."
   :type 'float)
 
+(defcustom key-chord-safety-interval-backward 0.1
+  "Min time to distinguish a key chord and preceding inputs."
+  :type 'float)
+
+(defcustom key-chord-safety-interval-forward 0.35
+  "Min time delay to distinguish a key chord and following inputs."
+  :type 'float)
+
 (defcustom key-chord-in-macros t
   "If nil, don't expand key chords when executing keyboard macros.
 
@@ -66,6 +74,13 @@ when recorded.)"
 (defvar key-chord-in-last-kbd-macro nil)
 (defvar key-chord-defining-kbd-macro nil)
 
+;; Internal vars for
+;; `key-chord-safety-interval-backward'. `key-chord-idle-state' is
+;; non-nil iff at least `key-chord-safety-interval-backward' past
+;; after the last (non-keychord) input.
+(defvar key-chord-idle-state t)
+(defvar key-chord-timer-object nil)
+
 ;;;###autoload
 (define-minor-mode key-chord-mode
   "Map pairs of simultaneously pressed keys to commands.
@@ -74,9 +89,16 @@ See functions `key-chord-define-global', `key-chord-define-local',
 and `key-chord-define' and variables `key-chord-two-keys-delay'
 and `key-chord-one-key-delay'."
   :global t
-  (setq input-method-function
-        (and key-chord-mode
-             'key-chord-input-method)))
+  (if key-chord-mode
+      (progn
+        (setq input-method-function 'key-chord-input-method)
+        (setq key-chord-timer-object
+              (run-with-idle-timer
+               key-chord-safety-interval-backward 'repeat
+               (lambda () (setq key-chord-idle-state t)))))
+    (cancel-timer key-chord-timer-object)
+    (setq input-method-function nil)
+    (setq key-chord-timer-object nil)))
 
 ;;;###autoload
 (defun key-chord-define-global (keys command)
@@ -170,7 +192,8 @@ Commands. Please ignore that."
 (defun key-chord-input-method (first-char)
   "Input method controlled by key bindings with the prefix `key-chord'."
   (cond
-   ((and (not (eq first-char key-chord-last-unmatched))
+   ((and key-chord-idle-state
+         (not (eq first-char key-chord-last-unmatched))
          (key-chord-lookup-key (vector 'key-chord first-char)))
     (let ((delay (if (key-chord-lookup-key
                       (vector 'key-chord first-char first-char))
@@ -182,12 +205,14 @@ Commands. Please ignore that."
                  (eldoc-pre-command-refresh-echo-area))
                (sit-for delay 'no-redisplay))
              (setq key-chord-last-unmatched nil)
+             (setq key-chord-idle-state nil)
              (list first-char))
             (t ; input-pending-p
              (let* ((input-method-function nil)
                     (next-char (read-event))
                     (res (vector 'key-chord first-char next-char)))
-               (cond ((key-chord-lookup-key res)
+               (cond ((and (key-chord-lookup-key res)
+                           (sit-for key-chord-safety-interval-forward 'no-redisplay))
                       (setq key-chord-defining-kbd-macro
                             (cons first-char key-chord-defining-kbd-macro))
                       (list 'key-chord first-char next-char))
@@ -196,9 +221,11 @@ Commands. Please ignore that."
                             (cons next-char unread-command-events))
                       (when (eq first-char next-char)
                         (setq key-chord-last-unmatched first-char))
+                      (setq key-chord-idle-state nil)
                       (list first-char))))))))
    (t ; no key-chord keymap
     (setq key-chord-last-unmatched first-char)
+    (setq key-chord-idle-state nil)
     (list first-char))))
 
 (defun key-chord--start-kbd-macro (_append &optional _no-exec)
