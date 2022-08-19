@@ -7,23 +7,27 @@ twice in quick succession to a command. Such bindings are called
 
 ## Quick start
 
-Add to your ~/.emacs
+Add to your `~/.emacs`:
 
-     (require 'key-chord)
-     (key-chord-mode 1)
+``` elisp
+(require 'key-chord)
+(key-chord-mode 1)
+```
 
-and some chords, for example
+and some chords, for example:
 
-     (key-chord-define-global "hj"     'undo)
-     (key-chord-define-global ",."     "<>\C-b")
+``` elisp
+(key-chord-define-global "hj" 'undo)
+(key-chord-define-global ",." "<>\C-b")
+```
 
 ## Terminology
 
 In this package, a "key chord" is two keys pressed simultaneously,
 or a single key quickly pressed twice.
 
-(Sometimes pressing SHIFT and/or META plus another key is call a chord,
-but not here. However SHIFT plus two normal keys can be a "key chord".)
+(Sometimes pressing `SHIFT` and/or `META` plus another key is call a chord,
+but not here. However, `SHIFT` plus two normal keys can be a "key chord".)
 
 ## Description
 
@@ -39,13 +43,14 @@ A TWO-key chord is two distinct keys pressed simultaneously (within
 one tenth of a second, or so).
 
 Examples:
-
-     (key-chord-define-global ",."     "<>\C-b")
-     (key-chord-define-global "hj"     'undo)
-     (key-chord-define-global [?h ?j]  'undo)  ; the same
-     (key-chord-define-global "jk"     'dabbrev-expand)
-     (key-chord-define-global "cv"     'reindent-then-newline-and-indent)
-     (key-chord-define-global "4r"     "$")
+``` elisp
+(key-chord-define-global ",."     "<>\C-b")
+(key-chord-define-global "hj"     'undo)
+(key-chord-define-global [?h ?j]  'undo)  ; the same
+(key-chord-define-global "jk"     'dabbrev-expand)
+(key-chord-define-global "cv"     'reindent-then-newline-and-indent)
+(key-chord-define-global "4r"     "$")
+```
 
 Comma and dot pressed together insert a pair of angle brackets.
 `h` and `j` pressed together invoke the undo command.
@@ -57,20 +62,22 @@ A ONE-key chord is a single key quickly pressed twice (within one third
 of a second or so).
 
 Examples:
-
-     (key-chord-define-global "''"     "`'\C-b")
-     (key-chord-define-global ",,"     'indent-for-comment)
-     (key-chord-define-global "qq"     "the ")
-     (key-chord-define-global "QQ"     "The ")
+``` elisp
+(key-chord-define-global "''"     "`'\C-b")
+(key-chord-define-global ",,"     'indent-for-comment)
+(key-chord-define-global "qq"     "the ")
+(key-chord-define-global "QQ"     "The ")
+```
 
 Tick (') pressed twice inserts a back-tick and a tick (`'`).
 Comma (,) pressed twice indents for and/or inserts a comment.
 `q` pressed twice inserts the word "the ".
 
 Examples: Mode specific chords
-
-     (key-chord-define c++-mode-map ";;"  "\C-e;")
-     (key-chord-define c++-mode-map "{}"  "{\n\n}\C-p\t")
+``` elisp
+(key-chord-define c++-mode-map ";;"  "\C-e;")
+(key-chord-define c++-mode-map "{}"  "{\n\n}\C-p\t")
+```
 
 The command `key-chord-describe` lists currently defined key chords.
 The standard command `describe-bindings` (`C-h b`) will also show key
@@ -84,14 +91,14 @@ code to carry out this functionality.)
 
 Don't chord key combinations that exists in the languages you typically
 write. Otherwise, if you are typing fast, two key intended to be separate
-letters might instead trig a chord.
-E.g. "uu" would be a good chord in spanish but not in finnish, and
-"hj" would be a good chord in english but not in swedish.
+letters might instead trigger a chord.
+E.g. `uu` would be a good chord in Spanish but not in Finnish, and
+`hj` would be a good chord in English but not in Swedish.
 
-Don't rely solely on /usr/dict/words to find unusual combination.
-For example "cv" or "fg" can be quite common in certain kinds of
+Don't rely solely on `/usr/dict/words` to find unusual combination.
+For example `cv` or `fg` can be quite common in certain kinds of
 programming. Grep your own texts to verify that a combination is unusual.
-And don't forget to check both permutations: "fg" and "gf".
+And don't forget to check both permutations: `fg` and `gf`.
 
 Choose two keys that are close to each other on the keyboard, so they
 can be quickly typed without effort. Chords involving two hands (as
@@ -104,15 +111,15 @@ Key chords might not work well over a slow network.
 ## Limitations
 
 When recording keyboard macros, the time between keyboard inputs are not
-recorded. Thus, the key-chord-input-method cannot know for sure if two keys
+recorded. Thus, the `key-chord-input-method` cannot know for sure if two keys
 in a macro was a chord or not. The current solution remembers the first key
 of the chords typed during macro recording, and keys that match those (and
 are defined as chords) are considered key-chords during macro execution.
-This knowledge is not saved with `name-last-kbd-macro', so they may
+This knowledge is not saved with `name-last-kbd-macro`, so they may
 execute wrong if they contain pair of keys that match defined chords.
 
-Emacs will not call input-method-function for keys that have non numeric
-codes or whos code is outside the range 32..126. Thus you cannot define
+Emacs will not call `input-method-function` for keys that have non numeric
+codes or whose code is outside the range 32..126. Thus, you cannot define
 key chords involving function keys, control keys, or even your non-english
 letters (on national keyboards) that otherwise are well positioned for
 chording on your keyboard.
@@ -121,11 +128,11 @@ I consider this a bug in Emacs. Input methods could happily return
 unmodified *any* key they don't know about.)
 
 Key chords longer that 2 keys are not supported. It could be done, but I
-don't think it is worth the trubbel since most keyboards will not reliably
+don't think it is worth the trouble, since most keyboards will not reliably
 send all key codes when 3 or more keys are pressed simultaneously.
 It might also be a bit trickier to maintain performance.
 
-Key chord mode uses input-method-function. And so do internationalisation
+Key chord mode uses `input-method-function`. And so do internationalisation
 packages (mule, quail, etc). Do not expect them to work well together.
 The last one that gets the `input-method-function` rules.
 
@@ -138,8 +145,8 @@ Key chord key codes are vectors beginning with the atom `key-chord`.
 A two key chord, e.g. `"hj"`, will add two entries in the key-map.
 E.g. `[key-chord ?h ?j]` and `[key-chord ?j ?h]`.
 
-When key-chord-mode is enabled input-method-function is set to
-key-chord-input-method.
+When key-chord-mode is enabled `input-method-function` is set to
+`key-chord-input-method`.
 
 ## To do
 
