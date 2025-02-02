@@ -54,6 +54,12 @@ sure when executing whether two keys were typed quickly or slowly
 when recorded.)"
   :type 'boolean)
 
+(defcustom key-chord-one-key-min-delay 0.0
+  "Minimum delay (in seconds) between two presses for a double-tap key-chord (using the same key)
+to be recognized.  If the delay between two identical key presses is less than this value (as when holding a key),
+the chord will not trigger."
+  :type 'float)
+
 ;; Internal vars
 (defvar key-chord-mode nil)
 
@@ -173,7 +179,8 @@ Commands. Please ignore that."
   (cond
    ((and (not (eq first-char key-chord-last-unmatched))
          (key-chord-lookup-key (vector 'key-chord first-char)))
-    (let ((delay (if (key-chord-lookup-key
+    (let ((start-time (current-time))
+          (delay (if (key-chord-lookup-key
                       (vector 'key-chord first-char first-char))
                      key-chord-one-key-delay
                    key-chord-two-keys-delay)))
@@ -187,17 +194,23 @@ Commands. Please ignore that."
             (t ; input-pending-p
              (let* ((input-method-function nil)
                     (next-char (read-event))
+                    (elapsed (float-time (time-subtract (current-time) start-time)))
                     (res (vector 'key-chord first-char next-char)))
-               (cond ((key-chord-lookup-key res)
-                      (setq key-chord-defining-kbd-macro
-                            (cons first-char key-chord-defining-kbd-macro))
-                      (list 'key-chord first-char next-char))
-                     (t ;put back next-char and return first-char
-                      (setq unread-command-events
-                            (cons next-char unread-command-events))
-                      (when (eq first-char next-char)
-                        (setq key-chord-last-unmatched first-char))
-                      (list first-char))))))))
+               (if (and (eq first-char next-char)
+                        (< elapsed key-chord-one-key-min-delay))
+                   (progn
+                     (setq unread-command-events (cons next-char unread-command-events))
+                     (setq key-chord-last-unmatched first-char)
+                     (list first-char))
+                 (if (key-chord-lookup-key res)
+                     (progn
+                       (setq key-chord-defining-kbd-macro
+                             (cons first-char key-chord-defining-kbd-macro))
+                       (list 'key-chord first-char next-char))
+                   (setq unread-command-events (cons next-char unread-command-events))
+                   (when (eq first-char next-char)
+                     (setq key-chord-last-unmatched first-char))
+                   (list first-char))))))))
    (t ; no key-chord keymap
     (setq key-chord-last-unmatched first-char)
     (list first-char))))
