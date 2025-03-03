@@ -60,6 +60,21 @@ to be recognized.  If the delay between two identical key presses is less than t
 the chord will not trigger."
   :type 'float)
 
+(defcustom key-chord-typing-detection nil
+  "If non-nil, try to detect when user is typing text and disable chord detection temporarily.
+This helps avoid accidental chord triggering during fast typing."
+  :type 'boolean)
+
+(defcustom key-chord-typing-speed-threshold 0.1
+  "Maximum delay (in seconds) between keystrokes to be considered part of typing flow.
+If keys are pressed faster than this threshold, key-chord detection will be temporarily disabled."
+  :type 'float)
+
+(defcustom key-chord-typing-reset-delay 0.5
+  "Time (in seconds) after which to reset typing detection if no keys are pressed.
+After this much idle time, key-chord detection will be re-enabled."
+  :type 'float)
+
 ;; Internal vars
 (defvar key-chord-mode nil)
 
@@ -73,6 +88,14 @@ the chord will not trigger."
 (defvar key-chord-in-last-kbd-macro nil)
 (defvar key-chord-defining-kbd-macro nil)
 
+;; Typing detection variables
+(defvar key-chord-typing-mode nil
+  "Non-nil when user appears to be typing text rather than executing commands.")
+(defvar key-chord-last-key-time nil
+  "Time when the last key was pressed.")
+(defvar key-chord-typing-timer nil
+  "Timer to reset typing detection mode.")
+
 ;;;###autoload
 (define-minor-mode key-chord-mode
   "Map pairs of simultaneously pressed keys to commands.
@@ -83,7 +106,9 @@ and `key-chord-one-key-delay'."
   :global t
   (setq input-method-function
         (and key-chord-mode
-             'key-chord-input-method)))
+             'key-chord-input-method))
+  (when key-chord-typing-detection
+    (key-chord-reset-typing-detection)))
 
 ;;;###autoload
 (defun key-chord-define-global (keys command)
@@ -174,9 +199,54 @@ Commands. Please ignore that."
   (interactive)
   (describe-bindings [key-chord]))
 
+(defun key-chord-reset-typing-detection ()
+  "Reset typing detection state when key-chord-mode is toggled."
+  (setq key-chord-typing-mode nil)
+  (setq key-chord-last-key-time nil)
+  (when key-chord-typing-timer
+    (cancel-timer key-chord-typing-timer)
+    (setq key-chord-typing-timer nil)))
+
+(defun key-chord-reset-typing-mode ()
+  "Reset the typing detection mode."
+  (setq key-chord-typing-mode nil)
+  (setq key-chord-typing-timer nil))
+
+(defun key-chord-check-typing-mode (current-time)
+  "Check if user is in typing mode based on timing between keystrokes."
+  (when key-chord-typing-detection
+    ;; Cancel existing timer if any
+    (when key-chord-typing-timer
+      (cancel-timer key-chord-typing-timer))
+
+    ;; Set idle timer to reset typing mode after idle period
+    (setq key-chord-typing-timer
+          (run-with-idle-timer key-chord-typing-reset-delay nil
+                              #'key-chord-reset-typing-mode))
+
+    ;; Check if we're in typing flow based on timing
+    (when key-chord-last-key-time
+      (let ((elapsed (float-time (time-subtract current-time key-chord-last-key-time))))
+        (when (< elapsed key-chord-typing-speed-threshold)
+          (setq key-chord-typing-mode t))))
+
+    ;; Update last key time
+    (setq key-chord-last-key-time current-time)))
+
 (defun key-chord-input-method (first-char)
   "Input method controlled by key bindings with the prefix `key-chord'."
+  ;; Check typing mode (but not during macro execution)
+  (unless executing-kbd-macro
+    (key-chord-check-typing-mode (current-time)))
+
   (cond
+   ;; Skip chord detection if in typing mode (but not during macro execution)
+   ((and key-chord-typing-detection
+         key-chord-typing-mode
+         (not executing-kbd-macro))
+    (setq key-chord-last-unmatched first-char)
+    (list first-char))
+
    ((and (not (eq first-char key-chord-last-unmatched))
          (key-chord-lookup-key (vector 'key-chord first-char)))
     (let ((start-time (current-time))
