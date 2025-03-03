@@ -267,6 +267,7 @@ Commands. Please ignore that."
                     (elapsed (float-time (time-subtract (current-time) start-time)))
                     (res (vector 'key-chord first-char next-char)))
                (if (and (eq first-char next-char)
+                        (not executing-kbd-macro)
                         (< elapsed key-chord-one-key-min-delay))
                    (progn
                      (setq unread-command-events (cons next-char unread-command-events))
