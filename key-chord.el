@@ -81,9 +81,9 @@ After this much idle time, key-chord detection will be re-enabled."
 
 (defcustom key-chord-use-key-tracking t
   "If non-nil, track which keys are used in chords to optimize lookups.
-This improves performance by avoiding unnecessary key-chord-lookup-key
-calls. However, it could potentially cause issues if key chords are
-defined outside of the normal key-chord-define* functions."
+This improves performance by avoiding unnecessary key-chord-lookup-key calls.
+However, it could potentially cause issues if key chords are defined
+outside of the normal key-chord-define* functions."
   :type 'boolean)
 
 ;; Internal vars
@@ -186,14 +186,14 @@ cases is shared with all other buffers in the same major mode."
                          (or (key-chord-lookup-key1 map (vector 'key-chord key1 k))
                              (key-chord-lookup-key1 map (vector 'key-chord k key1))))
                 (setq remove-key1 nil)))
-              
+
             ;; Check if key2 is used in any other chord
             (dotimes (k 256)
               (when (and (not (and (= k key1) (= key1 key2)))
                          (or (key-chord-lookup-key1 map (vector 'key-chord key2 k))
                              (key-chord-lookup-key1 map (vector 'key-chord k key2))))
                 (setq remove-key2 nil))))))
-        
+
       ;; Remove keys from tracking vector if not used elsewhere
       (when remove-key1 (aset key-chord-keys-in-use key1 nil))
       (when remove-key2 (aset key-chord-keys-in-use key2 nil)))))
@@ -270,13 +270,14 @@ Commands. Please ignore that."
     ;; Set idle timer to reset typing mode after idle period
     (setq key-chord-typing-timer
           (run-at-time key-chord-typing-reset-delay nil
-                              #'key-chord-reset-typing-mode))
+                       #'key-chord-reset-typing-mode))
 
     ;; Check if we're in typing flow based on timing
-    (when key-chord-last-key-time
-      (let ((elapsed (float-time (time-subtract current-time key-chord-last-key-time))))
-        (when (< elapsed key-chord-typing-speed-threshold)
-          (setq key-chord-in-typing-flow t))))
+    (unless key-chord-in-typing-flow
+      (when key-chord-last-key-time
+        (let ((elapsed (float-time (time-subtract current-time key-chord-last-key-time))))
+          (when (< elapsed key-chord-typing-speed-threshold)
+            (setq key-chord-in-typing-flow t)))))
 
     ;; Update last key time
     (setq key-chord-last-key-time current-time)))
