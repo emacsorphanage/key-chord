@@ -79,6 +79,13 @@ If keys are pressed faster than this threshold, key-chord detection will be temp
 After this much idle time, key-chord detection will be re-enabled."
   :type 'float)
 
+(defcustom key-chord-use-key-tracking t
+  "If non-nil, track which keys are used in chords to optimize lookups.
+This improves performance by avoiding unnecessary key-chord-lookup-key
+calls. However, it could potentially cause issues if key chords are
+defined outside of the normal key-chord-define* functions."
+  :type 'boolean)
+
 ;; Internal vars
 (defvar key-chord-mode nil)
 
@@ -100,6 +107,10 @@ After this much idle time, key-chord detection will be re-enabled."
 (defvar key-chord-typing-timer nil
   "Timer to reset typing detection mode.")
 
+;; Key tracking for optimization
+(defvar key-chord-keys-in-use (make-vector 256 nil)
+  "Vector indicating which keys are used in any chord.")
+
 ;;;###autoload
 (define-minor-mode key-chord-mode
   "Map pairs of simultaneously pressed keys to commands.
@@ -111,8 +122,7 @@ and `key-chord-one-key-delay'."
   (setq input-method-function
         (and key-chord-mode
              'key-chord-input-method))
-  (when key-chord-typing-detection
-    (key-chord-reset-typing-detection)))
+  (key-chord-reset-typing-detection))
 
 ;;;###autoload
 (defun key-chord-define-global (keys command)
@@ -156,6 +166,38 @@ cases is shared with all other buffers in the same major mode."
   (interactive "sUnset key chord locally (2 keys): ")
   (key-chord-define (current-local-map) keys nil))
 
+(defun key-chord-update-keys-in-use (key1 key2 command)
+  "Update the keys-in-use vector based on the chord being defined or removed."
+  (if command
+      (progn
+        ;; Adding a chord - mark keys as in use
+        (aset key-chord-keys-in-use key1 t)
+        (aset key-chord-keys-in-use key2 t))
+    ;; Removing a chord - need to check if keys are used in other chords
+    (let ((remove-key1 t)
+          (remove-key2 t))
+      ;; Check if keys are used in any other chords
+      (let ((maps (list (current-global-map) (current-local-map))))
+        (dolist (map (append maps (current-minor-mode-maps)))
+          (when map
+            ;; Check if key1 is used in any other chord
+            (dotimes (k 256)
+              (when (and (not (and (= k key2) (= key1 key2)))
+                         (or (key-chord-lookup-key1 map (vector 'key-chord key1 k))
+                             (key-chord-lookup-key1 map (vector 'key-chord k key1))))
+                (setq remove-key1 nil)))
+              
+            ;; Check if key2 is used in any other chord
+            (dotimes (k 256)
+              (when (and (not (and (= k key1) (= key1 key2)))
+                         (or (key-chord-lookup-key1 map (vector 'key-chord key2 k))
+                             (key-chord-lookup-key1 map (vector 'key-chord k key2))))
+                (setq remove-key2 nil))))))
+        
+      ;; Remove keys from tracking vector if not used elsewhere
+      (when remove-key1 (aset key-chord-keys-in-use key1 nil))
+      (when remove-key2 (aset key-chord-keys-in-use key2 nil)))))
+
 ;;;###autoload
 (defun key-chord-define (keymap keys command)
   "Define in KEYMAP, a key-chord of the two keys in KEYS starting a COMMAND.
@@ -175,7 +217,9 @@ If COMMAND is nil, the key-chord is removed."
     (if (eq key1 key2)
         (define-key keymap (vector 'key-chord key1 key2) command)
       (define-key keymap (vector 'key-chord key1 key2) command)
-      (define-key keymap (vector 'key-chord key2 key1) command))))
+      (define-key keymap (vector 'key-chord key2 key1) command))
+    ;; Update the key tracking
+    (key-chord-update-keys-in-use key1 key2 command)))
 
 (defun key-chord-lookup-key1 (keymap key)
   "Like lookup-key but no third arg and no numeric return value."
@@ -259,61 +303,81 @@ Commands. Please ignore that."
     (setq key-chord-last-unmatched first-char)
     (list first-char))
 
-   ((and (not (eq first-char key-chord-last-unmatched))
-         (key-chord-lookup-key (vector 'key-chord first-char)))
-    (let ((start-time (current-time))
-          (delay (if (key-chord-lookup-key
-                      (vector 'key-chord first-char first-char))
-                     key-chord-one-key-delay
-                   key-chord-two-keys-delay)))
-      (cond
-       ((input-pending-p)
-        (let ((next-char (read-event nil nil delay)))
-          (if (null next-char)
-              (progn
-                (setq key-chord-last-unmatched first-char)
-                (list first-char))
-            (if (and (eq first-char next-char)
-                     (or (< (float-time (time-subtract (current-time) start-time))
-                            key-chord-one-key-min-delay)
-                         executing-kbd-macro))
-                (progn
-                  (setq unread-command-events (cons next-char unread-command-events))
-                  (setq key-chord-last-unmatched first-char)
-                  (list first-char))
-              (if (key-chord-lookup-key (vector 'key-chord first-char next-char))
+   ;; Optimization: Skip chord detection completely if key tracking is enabled
+   ;; and first-char is not used in any chord
+   ((and key-chord-use-key-tracking
+         (not (aref key-chord-keys-in-use first-char)))
+    (setq key-chord-last-unmatched first-char)
+    (list first-char))
+
+   ;; Continue with chord detection for keys that might be part of a chord
+   ((not (eq first-char key-chord-last-unmatched))
+    (let ((res (key-chord-lookup-key (vector 'key-chord first-char))))
+      (if (not res)
+          (progn
+            (setq key-chord-last-unmatched first-char)
+            (list first-char))
+        (let ((start-time (current-time))
+              (delay (if (key-chord-lookup-key
+                          (vector 'key-chord first-char first-char))
+                         key-chord-one-key-delay
+                       key-chord-two-keys-delay)))
+          (cond
+           ((input-pending-p)
+            (let ((next-char (read-event nil nil delay)))
+              (if (null next-char)
                   (progn
-                    (setq key-chord-defining-kbd-macro
-                          (cons first-char key-chord-defining-kbd-macro))
-                    (list 'key-chord first-char next-char))
-                (setq unread-command-events (cons next-char unread-command-events))
-                (when (eq first-char next-char)
-                  (setq key-chord-last-unmatched first-char))
-                (list first-char))))))
-       (t ; no input pending
-        (let ((next-char (read-event nil nil delay)))
-          (if (null next-char)
-              (progn
-                (setq key-chord-last-unmatched first-char)
-                (list first-char))
-            (if (and (eq first-char next-char)
-                     (or (< (float-time (time-subtract (current-time) start-time))
-                            key-chord-one-key-min-delay)
-                         executing-kbd-macro))
-                (progn
-                  (setq unread-command-events (cons next-char unread-command-events))
-                  (setq key-chord-last-unmatched first-char)
-                  (list first-char))
-              (if (key-chord-lookup-key (vector 'key-chord first-char next-char))
+                    (setq key-chord-last-unmatched first-char)
+                    (list first-char))
+                (if (and (eq first-char next-char)
+                         (or (< (float-time (time-subtract (current-time) start-time))
+                                key-chord-one-key-min-delay)
+                             executing-kbd-macro))
+                    (progn
+                      (setq unread-command-events (cons next-char unread-command-events))
+                      (setq key-chord-last-unmatched first-char)
+                      (list first-char))
+                  ;; Optimization: Only do lookup if next-char is a valid key in any chord
+                  ;; or if key tracking is disabled
+                  (if (and (or (not key-chord-use-key-tracking)
+                               (aref key-chord-keys-in-use next-char))
+                           (key-chord-lookup-key (vector 'key-chord first-char next-char)))
+                      (progn
+                        (setq key-chord-defining-kbd-macro
+                              (cons first-char key-chord-defining-kbd-macro))
+                        (list 'key-chord first-char next-char))
+                    (setq unread-command-events (cons next-char unread-command-events))
+                    (when (eq first-char next-char)
+                      (setq key-chord-last-unmatched first-char))
+                    (list first-char))))))
+           (t ; no input pending
+            (let ((next-char (read-event nil nil delay)))
+              (if (null next-char)
                   (progn
-                    (setq key-chord-defining-kbd-macro
-                          (cons first-char key-chord-defining-kbd-macro))
-                    (list 'key-chord first-char next-char))
-                (setq unread-command-events (cons next-char unread-command-events))
-                (when (eq first-char next-char)
-                  (setq key-chord-last-unmatched first-char))
-                (list first-char)))))))))
-   (t ; no key-chord keymap
+                    (setq key-chord-last-unmatched first-char)
+                    (list first-char))
+                (if (and (eq first-char next-char)
+                         (or (< (float-time (time-subtract (current-time) start-time))
+                                key-chord-one-key-min-delay)
+                             executing-kbd-macro))
+                    (progn
+                      (setq unread-command-events (cons next-char unread-command-events))
+                      (setq key-chord-last-unmatched first-char)
+                      (list first-char))
+                  ;; Optimization: Only do lookup if next-char is a valid key in any chord
+                  ;; or if key tracking is disabled
+                  (if (and (or (not key-chord-use-key-tracking)
+                               (aref key-chord-keys-in-use next-char))
+                           (key-chord-lookup-key (vector 'key-chord first-char next-char)))
+                      (progn
+                        (setq key-chord-defining-kbd-macro
+                              (cons first-char key-chord-defining-kbd-macro))
+                        (list 'key-chord first-char next-char))
+                    (setq unread-command-events (cons next-char unread-command-events))
+                    (when (eq first-char next-char)
+                      (setq key-chord-last-unmatched first-char))
+                    (list first-char)))))))))))
+   (t ; key was last unmatched
     (setq key-chord-last-unmatched first-char)
     (list first-char))))
 
