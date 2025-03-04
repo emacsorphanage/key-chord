@@ -243,8 +243,13 @@ Commands. Please ignore that."
    ;; Skip chord detection if in typing mode (but not during macro execution)
    ((and key-chord-typing-detection
          key-chord-typing-mode
-         (not executing-kbd-macro)
-         (not defining-kbd-macro))
+         (not executing-kbd-macro))
+    (setq key-chord-last-unmatched first-char)
+    (list first-char))
+
+   ;; Skip chord detection during macro execution if the key is not in a recorded chord
+   ((and executing-kbd-macro
+         (not (member first-char key-chord-in-last-kbd-macro)))
     (setq key-chord-last-unmatched first-char)
     (list first-char))
 
@@ -255,34 +260,53 @@ Commands. Please ignore that."
                       (vector 'key-chord first-char first-char))
                      key-chord-one-key-delay
                    key-chord-two-keys-delay)))
-      (cond ((if executing-kbd-macro
-                 (not (memq first-char key-chord-in-last-kbd-macro))
-               (when (bound-and-true-p eldoc-mode)
-                 (eldoc-pre-command-refresh-echo-area))
-               (sit-for delay 'no-redisplay))
-             (setq key-chord-last-unmatched nil)
-             (list first-char))
-            (t ; input-pending-p
-             (let* ((input-method-function nil)
-                    (next-char (read-event))
-                    (elapsed (float-time (time-subtract (current-time) start-time)))
-                    (res (vector 'key-chord first-char next-char)))
-               (if (and (eq first-char next-char)
-                        (not executing-kbd-macro)
-                        (< elapsed key-chord-one-key-min-delay))
-                   (progn
-                     (setq unread-command-events (cons next-char unread-command-events))
-                     (setq key-chord-last-unmatched first-char)
-                     (list first-char))
-                 (if (key-chord-lookup-key res)
-                     (progn
-                       (setq key-chord-defining-kbd-macro
-                             (cons first-char key-chord-defining-kbd-macro))
-                       (list 'key-chord first-char next-char))
-                   (setq unread-command-events (cons next-char unread-command-events))
-                   (when (eq first-char next-char)
-                     (setq key-chord-last-unmatched first-char))
-                   (list first-char))))))))
+      (cond
+       ((input-pending-p)
+        (let ((next-char (read-event nil nil delay)))
+          (if (null next-char)
+              (progn
+                (setq key-chord-last-unmatched first-char)
+                (list first-char))
+            (if (and (eq first-char next-char)
+                     (or (< (float-time (time-subtract (current-time) start-time))
+                            key-chord-one-key-min-delay)
+                         executing-kbd-macro))
+                (progn
+                  (setq unread-command-events (cons next-char unread-command-events))
+                  (setq key-chord-last-unmatched first-char)
+                  (list first-char))
+              (if (key-chord-lookup-key (vector 'key-chord first-char next-char))
+                  (progn
+                    (setq key-chord-defining-kbd-macro
+                          (cons first-char key-chord-defining-kbd-macro))
+                    (list 'key-chord first-char next-char))
+                (setq unread-command-events (cons next-char unread-command-events))
+                (when (eq first-char next-char)
+                  (setq key-chord-last-unmatched first-char))
+                (list first-char))))))
+       (t ; no input pending
+        (let ((next-char (read-event nil nil delay)))
+          (if (null next-char)
+              (progn
+                (setq key-chord-last-unmatched first-char)
+                (list first-char))
+            (if (and (eq first-char next-char)
+                     (or (< (float-time (time-subtract (current-time) start-time))
+                            key-chord-one-key-min-delay)
+                         executing-kbd-macro))
+                (progn
+                  (setq unread-command-events (cons next-char unread-command-events))
+                  (setq key-chord-last-unmatched first-char)
+                  (list first-char))
+              (if (key-chord-lookup-key (vector 'key-chord first-char next-char))
+                  (progn
+                    (setq key-chord-defining-kbd-macro
+                          (cons first-char key-chord-defining-kbd-macro))
+                    (list 'key-chord first-char next-char))
+                (setq unread-command-events (cons next-char unread-command-events))
+                (when (eq first-char next-char)
+                  (setq key-chord-last-unmatched first-char))
+                (list first-char)))))))))
    (t ; no key-chord keymap
     (setq key-chord-last-unmatched first-char)
     (list first-char))))
