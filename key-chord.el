@@ -89,7 +89,7 @@ After this much idle time, key-chord detection will be re-enabled."
 (defvar key-chord-defining-kbd-macro nil)
 
 ;; Typing detection variables
-(defvar key-chord-typing-mode nil
+(defvar key-chord-in-typing-flow nil
   "Non-nil when user appears to be typing text rather than executing commands.")
 (defvar key-chord-last-key-time nil
   "Time when the last key was pressed.")
@@ -201,7 +201,7 @@ Commands. Please ignore that."
 
 (defun key-chord-reset-typing-detection ()
   "Reset typing detection state when key-chord-mode is toggled."
-  (setq key-chord-typing-mode nil)
+  (setq key-chord-in-typing-flow nil)
   (setq key-chord-last-key-time nil)
   (when key-chord-typing-timer
     (cancel-timer key-chord-typing-timer)
@@ -209,7 +209,7 @@ Commands. Please ignore that."
 
 (defun key-chord-reset-typing-mode ()
   "Reset the typing detection mode."
-  (setq key-chord-typing-mode nil)
+  (setq key-chord-in-typing-flow nil)
   (setq key-chord-typing-timer nil))
 
 (defun key-chord-check-typing-mode (current-time)
@@ -228,7 +228,7 @@ Commands. Please ignore that."
     (when key-chord-last-key-time
       (let ((elapsed (float-time (time-subtract current-time key-chord-last-key-time))))
         (when (< elapsed key-chord-typing-speed-threshold)
-          (setq key-chord-typing-mode t))))
+          (setq key-chord-in-typing-flow t))))
 
     ;; Update last key time
     (setq key-chord-last-key-time current-time)))
@@ -242,7 +242,7 @@ Commands. Please ignore that."
   (cond
    ;; Skip chord detection if in typing mode (but not during macro execution)
    ((and key-chord-typing-detection
-         key-chord-typing-mode
+         key-chord-in-typing-flow
          (not executing-kbd-macro))
     (setq key-chord-last-unmatched first-char)
     (list first-char))
