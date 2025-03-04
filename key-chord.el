@@ -243,7 +243,8 @@ Commands. Please ignore that."
    ;; Skip chord detection if in typing mode (but not during macro execution)
    ((and key-chord-typing-detection
          key-chord-typing-mode
-         (not executing-kbd-macro))
+         (not executing-kbd-macro)
+         (not defining-kbd-macro))
     (setq key-chord-last-unmatched first-char)
     (list first-char))
 
