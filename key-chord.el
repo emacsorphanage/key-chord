@@ -3,6 +3,7 @@
 ;; Copyright (C) 2003, 2005, 2008, 2012 David Andersson
 
 ;; Author: David Andersson <l.david.andersson(at)sverige.nu>
+;; Maintainer: LemonBreezes <look@strawberrytea.xyz>
 ;; Package-Version: 0.7.1
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: keyboard chord input
@@ -63,7 +64,9 @@ the chord will not trigger."
 
 (defcustom key-chord-typing-detection nil
   "If non-nil, try to detect when user is typing text and disable chord detection temporarily.
-This helps avoid accidental chord triggering during fast typing."
+This helps avoid accidental chord triggering during fast typing. This
+also dramatically improves the performance of key-chord when typing text
+by acting like a debounce."
   :type 'boolean)
 
 (defcustom key-chord-typing-speed-threshold 0.1

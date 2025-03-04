@@ -206,6 +206,12 @@ When key-chord-mode is enabled `input-method-function` is set to
 
 ## History
 
+- 0.8.2 (2025-03-15)
+  Use float-times instead of timers for typing detection
+- 0.8.1 (2025-03-11)
+  Add typing detection to prevent accidental chord triggering
+  Add minimum delay for double-tap chords
+  Performance improvements
 - 0.6 (2012-10-23) l.david.andersson(at)sverige.nu
   Add key-chord-define-local, key-chord-unset-local, key-chord-unset-global
 - 0.5 (2008-09-15) david(at)symsoft.se
