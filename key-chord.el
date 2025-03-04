@@ -247,9 +247,11 @@ Commands. Please ignore that."
     (setq key-chord-last-unmatched first-char)
     (list first-char))
 
-   ;; Skip chord detection during macro execution if the key is not in a recorded chord
+   ;; Skip chord detection during macro execution if key-chord-in-macros is nil
+   ;; or if the key is not in a recorded chord
    ((and executing-kbd-macro
-         (not (member first-char key-chord-in-last-kbd-macro)))
+         (or (not key-chord-in-macros)
+             (not (memq first-char key-chord-in-last-kbd-macro))))
     (setq key-chord-last-unmatched first-char)
     (list first-char))
 
