@@ -212,7 +212,7 @@ Commands. Please ignore that."
   (setq key-chord-in-typing-flow nil)
   (setq key-chord-typing-timer nil))
 
-(defun key-chord-check-typing-mode (current-time)
+(defun key-chord-check-typing-flow (current-time)
   "Check if user is in typing mode based on timing between keystrokes."
   (when key-chord-typing-detection
     ;; Cancel existing timer if any
@@ -221,7 +221,7 @@ Commands. Please ignore that."
 
     ;; Set idle timer to reset typing mode after idle period
     (setq key-chord-typing-timer
-          (run-with-idle-timer key-chord-typing-reset-delay nil
+          (run-at-time key-chord-typing-reset-delay nil
                               #'key-chord-reset-typing-mode))
 
     ;; Check if we're in typing flow based on timing
@@ -237,7 +237,7 @@ Commands. Please ignore that."
   "Input method controlled by key bindings with the prefix `key-chord'."
   ;; Check typing mode (but not during macro execution)
   (unless executing-kbd-macro
-    (key-chord-check-typing-mode (current-time)))
+    (key-chord-check-typing-flow (current-time)))
 
   (cond
    ;; Skip chord detection if in typing mode (but not during macro execution)
