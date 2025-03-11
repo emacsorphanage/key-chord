@@ -271,7 +271,7 @@ Commands. Please ignore that."
     (when key-chord-typing-timer
       (cancel-timer key-chord-typing-timer))
 
-    ;; Set idle timer to reset typing mode after idle period
+    ;; Set timer to reset typing mode after idle period
     (setq key-chord-typing-timer
           (run-at-time key-chord-typing-reset-delay nil
                        #'key-chord-reset-typing-mode))
