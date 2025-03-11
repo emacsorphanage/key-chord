@@ -4,7 +4,7 @@
 
 ;; Author: David Andersson <l.david.andersson(at)sverige.nu>
 ;; Maintainer: LemonBreezes <look@strawberrytea.xyz>
-;; Package-Version: 0.7.1
+;; Package-Version: 0.8.1
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: keyboard chord input
 ;; URL: https://github.com/LemonBreezes/key-chord
