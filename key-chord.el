@@ -105,8 +105,8 @@ outside of the normal key-chord-define* functions."
   "Non-nil when user appears to be typing text rather than executing commands.")
 (defvar key-chord-last-key-time nil
   "Time when the last key was pressed.")
-(defvar key-chord-typing-timer nil
-  "Timer to reset typing detection mode.")
+(defvar key-chord-typing-reset-time nil
+  "Time after which typing flow should be reset.")
 
 ;; Key tracking for optimization
 (defvar key-chord-keys-in-use (make-vector 256 nil)
@@ -255,26 +255,23 @@ Commands. Please ignore that."
   "Reset typing detection state when key-chord-mode is toggled."
   (setq key-chord-in-typing-flow nil)
   (setq key-chord-last-key-time nil)
-  (when key-chord-typing-timer
-    (cancel-timer key-chord-typing-timer)
-    (setq key-chord-typing-timer nil)))
+  (setq key-chord-typing-reset-time nil))
 
 (defun key-chord-reset-typing-mode ()
   "Reset the typing detection mode."
-  (setq key-chord-in-typing-flow nil)
-  (setq key-chord-typing-timer nil))
+  (setq key-chord-in-typing-flow nil))
 
 (defun key-chord-check-typing-flow (current-time)
   "Check if user is in typing mode based on timing between keystrokes."
   (when key-chord-typing-detection
-    ;; Cancel existing timer if any
-    (when key-chord-typing-timer
-      (cancel-timer key-chord-typing-timer))
+    ;; Check if we need to reset typing flow based on elapsed time
+    (when (and key-chord-typing-reset-time
+               (> (float-time current-time) key-chord-typing-reset-time))
+      (setq key-chord-in-typing-flow nil))
 
-    ;; Set timer to reset typing mode after idle period
-    (setq key-chord-typing-timer
-          (run-at-time key-chord-typing-reset-delay nil
-                       #'key-chord-reset-typing-mode))
+    ;; Set new reset time
+    (setq key-chord-typing-reset-time 
+          (+ (float-time current-time) key-chord-typing-reset-delay))
 
     ;; Check if we're in typing flow based on timing
     (unless key-chord-in-typing-flow
