@@ -1,4 +1,5 @@
-;;; key-chord.el --- map pairs of simultaneously pressed keys to commands  -*- lexical-binding: t; -*-
+;;; key-chord.el --- map pairs of simultaneously pressed keys to commands
+;;  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2003, 2005, 2008, 2012 David Andersson
 
@@ -42,8 +43,9 @@
   :type 'float)
 
 (defcustom key-chord-one-key-delay 0.2
-  "Max time delay between two press of the same key to be considered a key chord.
-This should normally be a little longer than `key-chord-two-keys-delay'."
+  "Max time delay between two press of the same key for a chord.
+This should normally be a little longer than
+`key-chord-two-keys-delay'."
   :type 'float)
 
 (defcustom key-chord-in-macros nil
@@ -58,33 +60,36 @@ where they shouldn't be)."
   :type 'boolean)
 
 (defcustom key-chord-one-key-min-delay 0.0
-  "Minimum delay (in seconds) between two presses for a double-tap key-chord (using the same key)
-to be recognized.  If the delay between two identical key presses is less than this value (as when holding a key),
-the chord will not trigger."
+  "Minimum delay (in seconds) between two presses for a double-tap key chord.
+The delay applies for chords using the same key. If the delay between two
+identical key presses is less than this value (as when holding a key), the
+chord will not trigger."
   :type 'float)
 
 (defcustom key-chord-typing-detection nil
-  "If non-nil, try to detect when user is typing text and disable chord detection temporarily.
+  "If non-nil, detect typing and temporarily disable chord detection.
 This helps avoid accidental chord triggering during fast typing. This
 also dramatically improves the performance of key-chord when typing text
 by acting like a debounce."
   :type 'boolean)
 
 (defcustom key-chord-typing-speed-threshold 0.1
-  "Maximum delay (in seconds) between keystrokes to be considered part of typing flow.
-If keys are pressed faster than this threshold, key-chord detection will be temporarily disabled."
+  "Maximum delay between keystrokes to be considered part of typing flow.
+Measured in seconds. If keys are pressed faster than this threshold,
+key-chord detection will be temporarily disabled."
   :type 'float)
 
 (defcustom key-chord-typing-reset-delay 0.5
-  "Time (in seconds) after which to reset typing detection if no keys are pressed.
-After this much idle time, key-chord detection will be re-enabled."
+  "Time after which to reset typing detection if no keys are pressed.
+Measured in seconds. After this much idle time, key-chord detection
+will be re-enabled."
   :type 'float)
 
 (defcustom key-chord-use-key-tracking t
   "If non-nil, track which keys are used in chords to optimize lookups.
-This improves performance by avoiding unnecessary key-chord-lookup-key calls.
-However, it could potentially cause issues if key chords are defined
-outside of the normal key-chord-define* functions."
+This improves performance by avoiding unnecessary key-chord-lookup-key
+calls. However, it could potentially cause issues if key chords are
+defined outside of the normal key-chord-define* functions."
   :type 'boolean)
 
 ;; Internal vars
@@ -100,6 +105,7 @@ outside of the normal key-chord-define* functions."
 (defvar key-chord-in-last-kbd-macro nil)
 (defvar key-chord-defining-kbd-macro nil)
 
+
 ;; Typing detection variables
 (defvar key-chord-in-typing-flow nil
   "Non-nil when user appears to be typing text rather than executing commands.")
@@ -107,6 +113,7 @@ outside of the normal key-chord-define* functions."
   "Time when the last key was pressed.")
 (defvar key-chord-typing-reset-time nil
   "Time after which typing flow should be reset.")
+
 
 ;; Key tracking for optimization
 (defvar key-chord-keys-in-use (make-vector 256 nil)
@@ -217,7 +224,7 @@ If COMMAND is nil, the key-chord is removed."
     (unless (and (integerp key1) (< key1 256)
                  (integerp key2) (< key2 256))
       (error "Key-chord keys must both be bytes (characters with codes < 256)"))
-    
+
     (if (eq key1 key2)
         (define-key keymap (vector 'key-chord key1 key2) command)
       (define-key keymap (vector 'key-chord key1 key2) command)
@@ -270,7 +277,7 @@ Commands. Please ignore that."
       (setq key-chord-in-typing-flow nil))
 
     ;; Set new reset time
-    (setq key-chord-typing-reset-time 
+    (setq key-chord-typing-reset-time
           (+ (float-time current-time) key-chord-typing-reset-delay))
 
     ;; Check if we're in typing flow based on timing
@@ -390,11 +397,15 @@ Commands. Please ignore that."
 
 (defun key-chord--start-kbd-macro (_append &optional _no-exec)
   (setq key-chord-defining-kbd-macro nil))
+
 (advice-add 'start-kbd-macro :after #'key-chord--start-kbd-macro)
+
 
 (defun key-chord--end-kbd-macro (&optional _repeat _loopfunc)
   (setq key-chord-in-last-kbd-macro key-chord-defining-kbd-macro))
+
 (advice-add 'end-kbd-macro :after #'key-chord--end-kbd-macro)
+
 
 (provide 'key-chord)
 ;; Local Variables:
