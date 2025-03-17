@@ -87,7 +87,7 @@ will be re-enabled."
 
 (defcustom key-chord-use-key-tracking t
   "If non-nil, track which keys are used in chords to optimize lookups.
-This improves performance by avoiding unnecessary key-chord-lookup-key
+This improves performance by avoiding unnecessary `key-chord-lookup-key'
 calls. However, it could potentially cause issues if key chords are
 defined outside of the normal key-chord-define* functions."
   :type 'boolean)
@@ -175,7 +175,8 @@ cases is shared with all other buffers in the same major mode."
   (key-chord-define (current-local-map) keys nil))
 
 (defun key-chord-update-keys-in-use (key1 key2 command)
-  "Update the keys-in-use vector based on the chord being defined or removed."
+  "Update the keys-in-use vector based on the chord being defined or removed.
+KEY1 and KEY2 are the keys in the chord, COMMAND is the command to run."
   (if command
       (progn
         ;; Adding a chord - mark keys as in use
@@ -233,7 +234,8 @@ If COMMAND is nil, the key-chord is removed."
     (key-chord-update-keys-in-use key1 key2 command)))
 
 (defun key-chord-lookup-key1 (keymap key)
-  "Like lookup-key but no third arg and no numeric return value."
+  "Like `lookup-key' but no third arg and no numeric return value.
+KEYMAP is the keymap to look up the KEY in."
   (let ((res (lookup-key keymap key)))
     (and (not (numberp res))
          res)))
@@ -259,7 +261,7 @@ Commands. Please ignore that."
   (describe-bindings [key-chord]))
 
 (defun key-chord-reset-typing-detection ()
-  "Reset typing detection state when key-chord-mode is toggled."
+  "Reset typing detection state when `key-chord-mode' is toggled."
   (setq key-chord-in-typing-flow nil)
   (setq key-chord-last-key-time nil)
   (setq key-chord-typing-reset-time nil))
@@ -269,7 +271,8 @@ Commands. Please ignore that."
   (setq key-chord-in-typing-flow nil))
 
 (defun key-chord-check-typing-flow (current-time)
-  "Check if user is in typing mode based on timing between keystrokes."
+  "Check if user is in typing mode based on timing between keystrokes.
+CURRENT-TIME is the time at which the function was called."
   (when key-chord-typing-detection
     ;; Check if we need to reset typing flow based on elapsed time
     (when (and key-chord-typing-reset-time
@@ -291,7 +294,8 @@ Commands. Please ignore that."
     (setq key-chord-last-key-time current-time)))
 
 (defun key-chord-input-method (first-char)
-  "Input method controlled by key bindings with the prefix `key-chord'."
+  "Input method controlled by key bindings with the prefix `key-chord'.
+FIRST-CHAR is the first character input by the user."
   ;; Check typing mode (but not during macro execution)
   (unless executing-kbd-macro
     (key-chord-check-typing-flow (current-time)))
@@ -396,12 +400,16 @@ Commands. Please ignore that."
     (list first-char))))
 
 (defun key-chord--start-kbd-macro (_append &optional _no-exec)
+  "Reset key chord tracking when a keyboard macro is started.
+_APPEND and _NO-EXEC are ignored arguments from `start-kbd-macro'."
   (setq key-chord-defining-kbd-macro nil))
 
 (advice-add 'start-kbd-macro :after #'key-chord--start-kbd-macro)
 
 
 (defun key-chord--end-kbd-macro (&optional _repeat _loopfunc)
+  "Save key chord information when a keyboard macro ends.
+_REPEAT and _LOOPFUNC are ignored arguments from `end-kbd-macro'."
   (setq key-chord-in-last-kbd-macro key-chord-defining-kbd-macro))
 
 (advice-add 'end-kbd-macro :after #'key-chord--end-kbd-macro)
