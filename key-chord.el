@@ -397,10 +397,10 @@ FIRST-CHAR is the first character input by the user."
                 ;; Not a valid chord, return first char and queue second
                 (setq unread-command-events (cons next-char unread-command-events))
                 (setq key-chord-last-unmatched first-char)
-                (list first-char)))))))))
+                (list first-char))))))))
    (t                                   ; key was last unmatched
     (setq key-chord-last-unmatched first-char)
-    (list first-char))))
+    (list first-char)))
 
 (defun key-chord--start-kbd-macro (_append &optional _no-exec)
   "Reset key chord tracking when a keyboard macro is started.
