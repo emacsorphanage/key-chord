@@ -300,10 +300,20 @@ FIRST-CHAR is the first character input by the user."
   (unless executing-kbd-macro
     (key-chord-check-typing-flow (current-time)))
 
+  ;; Handle special keys that might be symbols
   (cond
+   ;; Convert common special keys to their ASCII values
+   ((eq first-char 'tab) (setq first-char 9))
+   ((eq first-char 'return) (setq first-char 13))
+   ((eq first-char 'escape) (setq first-char 27))
+   ((eq first-char 'space) (setq first-char 32))
+   ;; For any other symbol or non-integer, bypass chord detection
+   ((or (symbolp first-char) (not (integerp first-char)))
+    (setq key-chord-last-unmatched nil) ;; Reset for safety
+    (list first-char))
+   
    ;; Skip non-byte characters
-   ((not (and (integerp first-char)
-              (< first-char 256)))
+   ((not (< first-char 256))
     (list first-char))
 
    ;; Skip chord detection if in typing mode (but not during macro execution)
