@@ -357,14 +357,20 @@ FIRST-CHAR is the first character input by the user."
                   (progn
                     (setq key-chord-last-unmatched first-char)
                     (list first-char))
-                (if (and (eq first-char next-char)
-                         (or (< (float-time (time-subtract (current-time) start-time))
-                                key-chord-one-key-min-delay)
-                             executing-kbd-macro))
+                ;; Handle non-integer next-char from read-event
+                (if (not (integerp next-char))
                     (progn
                       (setq unread-command-events (cons next-char unread-command-events))
                       (setq key-chord-last-unmatched first-char)
                       (list first-char))
+                  (if (and (eq first-char next-char)
+                           (or (< (float-time (time-subtract (current-time) start-time))
+                                  key-chord-one-key-min-delay)
+                               executing-kbd-macro))
+                      (progn
+                        (setq unread-command-events (cons next-char unread-command-events))
+                        (setq key-chord-last-unmatched first-char)
+                        (list first-char))
                   ;; Optimization: Only do lookup if next-char is a valid key in any chord
                   ;; or if key tracking is disabled
                   (if (and (or (not key-chord-use-key-tracking)
@@ -384,14 +390,20 @@ FIRST-CHAR is the first character input by the user."
                   (progn
                     (setq key-chord-last-unmatched first-char)
                     (list first-char))
-                (if (and (eq first-char next-char)
-                         (or (< (float-time (time-subtract (current-time) start-time))
-                                key-chord-one-key-min-delay)
-                             executing-kbd-macro))
+                ;; Handle non-integer next-char from read-event
+                (if (not (integerp next-char))
                     (progn
                       (setq unread-command-events (cons next-char unread-command-events))
                       (setq key-chord-last-unmatched first-char)
                       (list first-char))
+                  (if (and (eq first-char next-char)
+                           (or (< (float-time (time-subtract (current-time) start-time))
+                                  key-chord-one-key-min-delay)
+                               executing-kbd-macro))
+                      (progn
+                        (setq unread-command-events (cons next-char unread-command-events))
+                        (setq key-chord-last-unmatched first-char)
+                        (list first-char))
                   ;; Optimization: Only do lookup if next-char is a valid key in any chord
                   ;; or if key tracking is disabled
                   (if (and (or (not key-chord-use-key-tracking)
