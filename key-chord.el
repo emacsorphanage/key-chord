@@ -269,7 +269,13 @@ Commands. Please ignore that."
 
 (defun key-chord-reset-typing-mode ()
   "Reset the typing detection mode."
-  (setq key-chord-in-typing-flow nil))
+  (setq key-chord-in-typing-flow nil)
+  (setq key-chord-last-unmatched nil))
+
+(defun key-chord-pause-typing-flow ()
+  "Temporarily pause typing flow detection to allow chord detection."
+  (when key-chord-typing-detection
+    (setq key-chord-in-typing-flow nil)))
 
 (defun key-chord-check-typing-flow (current-time)
   "Check if user is in typing mode based on timing between keystrokes.
@@ -278,7 +284,8 @@ CURRENT-TIME is the time at which the function was called."
     ;; Check if we need to reset typing flow based on elapsed time
     (when (and key-chord-typing-reset-time
                (> (float-time current-time) key-chord-typing-reset-time))
-      (setq key-chord-in-typing-flow nil))
+      (setq key-chord-in-typing-flow nil)
+      (setq key-chord-last-unmatched nil)) ;; Reset last-unmatched when exiting typing flow
 
     ;; Set new reset time
     (setq key-chord-typing-reset-time
@@ -316,7 +323,8 @@ FIRST-CHAR is the first character input by the user."
    ((and key-chord-typing-detection
          key-chord-in-typing-flow
          (not executing-kbd-macro))
-    (setq key-chord-last-unmatched first-char)
+    ;; Don't update key-chord-last-unmatched in typing flow mode
+    ;; This prevents interference with chord detection when exiting typing flow
     (list first-char))
 
    ;; Skip chord detection during macro execution if key-chord-in-macros is nil
@@ -336,6 +344,7 @@ FIRST-CHAR is the first character input by the user."
 
    ;; Continue with chord detection for keys that might be part of a chord
    ((not (eq first-char key-chord-last-unmatched))
+    (key-chord-pause-typing-flow) ;; Temporarily exit typing flow for chord detection
     (let ((res (key-chord-lookup-key (vector 'key-chord first-char))))
       (if (not res)
           (progn
