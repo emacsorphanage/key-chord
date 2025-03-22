@@ -264,7 +264,8 @@ Commands. Please ignore that."
   "Reset typing detection state when `key-chord-mode' is toggled."
   (setq key-chord-in-typing-flow nil)
   (setq key-chord-last-key-time nil)
-  (setq key-chord-typing-reset-time nil))
+  (setq key-chord-typing-reset-time nil)
+  (setq key-chord-last-unmatched nil))
 
 (defun key-chord-reset-typing-mode ()
   "Reset the typing detection mode."
