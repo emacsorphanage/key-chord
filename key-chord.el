@@ -350,76 +350,59 @@ FIRST-CHAR is the first character input by the user."
                           (vector 'key-chord first-char first-char))
                          key-chord-one-key-delay
                        key-chord-two-keys-delay)))
-          (cond
-           ((input-pending-p)
-            (let ((next-char (read-event nil nil delay)))
-              (if (null next-char)
+          
+          ;; IMPROVED SECOND CHARACTER HANDLING
+          (let ((next-char (read-event nil nil delay)))
+            (cond
+             ;; No second character received within timeout
+             ((null next-char)
+              (setq key-chord-last-unmatched first-char)
+              (list first-char))
+             
+             ;; Handle non-integer next-char (special keys, modifiers, etc.)
+             ((not (integerp next-char))
+              (setq unread-command-events (cons next-char unread-command-events))
+              (setq key-chord-last-unmatched first-char)
+              (list first-char))
+             
+             ;; Handle out-of-range characters
+             ((not (< next-char 256))
+              (setq unread-command-events (cons next-char unread-command-events))
+              (setq key-chord-last-unmatched first-char)
+              (list first-char))
+             
+             ;; Handle double-press of the same key (with timing checks)
+             ((eq first-char next-char)
+              (if (< (float-time (time-subtract (current-time) start-time))
+                     key-chord-one-key-min-delay)
+                  ;; Too fast (key held down) - not a chord
                   (progn
+                    (setq unread-command-events (cons next-char unread-command-events))
                     (setq key-chord-last-unmatched first-char)
                     (list first-char))
-                ;; Handle non-integer next-char from read-event
-                (if (not (and (integerp next-char)
-                              (< next-char 256)))
+                ;; Check if this is a valid same-key chord
+                (if (key-chord-lookup-key (vector 'key-chord first-char next-char))
                     (progn
-                      (setq unread-command-events (cons next-char unread-command-events))
-                      (setq key-chord-last-unmatched first-char)
-                      (list first-char))
-                  (if (and (eq first-char next-char)
-                           (or (< (float-time (time-subtract (current-time) start-time))
-                                  key-chord-one-key-min-delay)
-                               executing-kbd-macro))
-                      (progn
-                        (setq unread-command-events (cons next-char unread-command-events))
-                        (setq key-chord-last-unmatched first-char)
-                        (list first-char))
-                    ;; Optimization: Only do lookup if next-char is a valid key in any chord
-                    ;; or if key tracking is disabled
-                    (if (and (or (not key-chord-use-key-tracking)
-                                 (aref key-chord-keys-in-use next-char))
-                             (key-chord-lookup-key (vector 'key-chord first-char next-char)))
-                        (progn
-                          (setq key-chord-defining-kbd-macro
-                                (cons first-char key-chord-defining-kbd-macro))
-                          (list 'key-chord first-char next-char))
-                      (setq unread-command-events (cons next-char unread-command-events))
-                      (when (eq first-char next-char)
-                        (setq key-chord-last-unmatched first-char))
-                      (list first-char))))))
-            (t                          ; no input pending
-             (let ((next-char (read-event nil nil delay)))
-               (if (null next-char)
-                   (progn
-                     (setq key-chord-last-unmatched first-char)
-                     (list first-char))
-                 ;; Handle non-integer next-char from read-event
-                 (if (not (and (integerp next-char)
-                               (< next-char 256)))
-                     (progn
-                       (setq unread-command-events (cons next-char unread-command-events))
-                       (setq key-chord-last-unmatched first-char)
-                       (list first-char))
-                   (if (and (eq first-char next-char)
-                            (or (< (float-time (time-subtract (current-time) start-time))
-                                   key-chord-one-key-min-delay)
-                                executing-kbd-macro))
-                       (progn
-                         (setq unread-command-events (cons next-char unread-command-events))
-                         (setq key-chord-last-unmatched first-char)
-                         (list first-char))
-                     ;; Optimization: Only do lookup if next-char is a valid key in any chord
-                     ;; or if key tracking is disabled
-                     (if (and (or (not key-chord-use-key-tracking)
-                                  (aref key-chord-keys-in-use next-char))
-                              (key-chord-lookup-key (vector 'key-chord first-char next-char)))
-                         (progn
-                           (setq key-chord-defining-kbd-macro
-                                 (cons first-char key-chord-defining-kbd-macro))
-                           (list 'key-chord first-char next-char))
-                       (progn
-                         (setq unread-command-events (cons next-char unread-command-events))
-                         (when (eq first-char next-char)
-                           (setq key-chord-last-unmatched first-char))
-                         (list first-char))))))))))))))
+                      (setq key-chord-defining-kbd-macro
+                            (cons first-char key-chord-defining-kbd-macro))
+                      (list 'key-chord first-char next-char))
+                  ;; Not a valid chord, return first char and queue second
+                  (setq unread-command-events (cons next-char unread-command-events))
+                  (setq key-chord-last-unmatched first-char)
+                  (list first-char))))
+             
+             ;; Handle two different keys
+             (t
+              ;; Check if this is a valid two-key chord
+              (if (key-chord-lookup-key (vector 'key-chord first-char next-char))
+                  (progn
+                    (setq key-chord-defining-kbd-macro
+                          (cons first-char key-chord-defining-kbd-macro))
+                    (list 'key-chord first-char next-char))
+                ;; Not a valid chord, return first char and queue second
+                (setq unread-command-events (cons next-char unread-command-events))
+                (setq key-chord-last-unmatched first-char)
+                (list first-char))))))))))
    (t ; key was last unmatched
     (setq key-chord-last-unmatched first-char)
     (list first-char))))
