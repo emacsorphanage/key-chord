@@ -302,11 +302,6 @@ FIRST-CHAR is the first character input by the user."
 
   ;; Handle special keys that might be symbols
   (cond
-   ;; Convert common special keys to their ASCII values
-   ((eq first-char 'tab) (setq first-char 9))
-   ((eq first-char 'return) (setq first-char 13))
-   ((eq first-char 'escape) (setq first-char 27))
-   ((eq first-char 'space) (setq first-char 32))
    ;; For any other symbol or non-integer, bypass chord detection
    ((or (symbolp first-char) (not (integerp first-char)))
     (setq key-chord-last-unmatched nil) ;; Reset for safety
@@ -402,8 +397,8 @@ FIRST-CHAR is the first character input by the user."
                 ;; Not a valid chord, return first char and queue second
                 (setq unread-command-events (cons next-char unread-command-events))
                 (setq key-chord-last-unmatched first-char)
-                (list first-char))))))))))
-   (t ; key was last unmatched
+                (list first-char)))))))))
+   (t                                   ; key was last unmatched
     (setq key-chord-last-unmatched first-char)
     (list first-char))))
 
