@@ -38,6 +38,14 @@
   "Map pairs of simultaneously pressed keys to commands."
   :group 'bindings)
 
+(defun key-chord-in-read-char-context-p ()
+  "Return non-nil if we're in a read-char or similar context.
+This is determined by checking if `overriding-local-map` is set to
+one of the special read keymaps."
+  (and overriding-local-map
+       (memq overriding-local-map
+             (list read-key-empty-map read-key-full-map))))
+
 (defcustom key-chord-two-keys-delay 0.1
   "Max time delay between two key press to be considered a key chord."
   :type 'float)
@@ -304,12 +312,24 @@ CURRENT-TIME is the time at which the function was called."
 (defun key-chord-input-method (first-char)
   "Input method controlled by key bindings with the prefix `key-chord'.
 FIRST-CHAR is the first character input by the user."
-  ;; Check typing mode (but not during macro execution)
-  (unless executing-kbd-macro
-    (key-chord-check-typing-flow (current-time)))
+  ;; Check if we're in a read-char context and bypass key-chord if so
+  (if (key-chord-in-read-char-context-p)
+      (progn
+        ;; Reset all key-chord state
+        (setq key-chord-last-unmatched nil)
+        (setq key-chord-in-typing-flow nil)
+        (setq key-chord-last-key-time nil)
+        (setq key-chord-typing-reset-time nil)
+        (list first-char))
+    
+    ;; Not in read-char context, proceed with normal key-chord processing
+    (progn
+      ;; Check typing mode (but not during macro execution)
+      (unless executing-kbd-macro
+        (key-chord-check-typing-flow (current-time)))
 
-  ;; Handle special keys that might be symbols
-  (cond
+      ;; Handle special keys that might be symbols
+      (cond
    ;; For any other symbol or non-integer, bypass chord detection
    ((or (symbolp first-char) (not (integerp first-char)))
     (setq key-chord-last-unmatched nil) ;; Reset for safety
@@ -414,7 +434,7 @@ FIRST-CHAR is the first character input by the user."
                 (list first-char)))))))))
    (t                                   ; key was last unmatched
     (setq key-chord-last-unmatched first-char)
-    (list first-char))))
+    (list first-char))))))
 
 (defun key-chord--start-kbd-macro (_append &optional _no-exec)
   "Reset key chord tracking when a keyboard macro is started.
