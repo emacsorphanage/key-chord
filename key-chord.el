@@ -380,6 +380,8 @@ FIRST-CHAR is the first character input by the user."
                     (progn
                       (setq key-chord-defining-kbd-macro
                             (cons first-char key-chord-defining-kbd-macro))
+                      ;; Reset last-unmatched after successful chord execution
+                      (setq key-chord-last-unmatched nil)
                       (list 'key-chord first-char next-char))
                   ;; Not a valid chord, return first char and queue second
                   (setq unread-command-events (cons next-char unread-command-events))
@@ -393,6 +395,8 @@ FIRST-CHAR is the first character input by the user."
                   (progn
                     (setq key-chord-defining-kbd-macro
                           (cons first-char key-chord-defining-kbd-macro))
+                    ;; Reset last-unmatched after successful chord execution
+                    (setq key-chord-last-unmatched nil)
                     (list 'key-chord first-char next-char))
                 ;; Not a valid chord, return first char and queue second
                 (setq unread-command-events (cons next-char unread-command-events))
