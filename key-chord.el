@@ -314,7 +314,7 @@ FIRST-CHAR is the first character input by the user."
    ((or (symbolp first-char) (not (integerp first-char)))
     (setq key-chord-last-unmatched nil) ;; Reset for safety
     (list first-char))
-   
+
    ;; Skip non-byte characters
    ((not (< first-char 256))
     (list first-char))
@@ -355,7 +355,7 @@ FIRST-CHAR is the first character input by the user."
                           (vector 'key-chord first-char first-char))
                          key-chord-one-key-delay
                        key-chord-two-keys-delay)))
-          
+
           ;; IMPROVED SECOND CHARACTER HANDLING
           (let ((next-char (read-event nil nil delay)))
             (cond
@@ -363,19 +363,19 @@ FIRST-CHAR is the first character input by the user."
              ((null next-char)
               (setq key-chord-last-unmatched first-char)
               (list first-char))
-             
+
              ;; Handle non-integer next-char (special keys, modifiers, etc.)
              ((not (integerp next-char))
               (setq unread-command-events (cons next-char unread-command-events))
               (setq key-chord-last-unmatched first-char)
               (list first-char))
-             
+
              ;; Handle out-of-range characters
              ((not (< next-char 256))
               (setq unread-command-events (cons next-char unread-command-events))
               (setq key-chord-last-unmatched first-char)
               (list first-char))
-             
+
              ;; Handle double-press of the same key (with timing checks)
              ((eq first-char next-char)
               (if (< (float-time (time-subtract (current-time) start-time))
@@ -397,7 +397,7 @@ FIRST-CHAR is the first character input by the user."
                   (setq unread-command-events (cons next-char unread-command-events))
                   (setq key-chord-last-unmatched first-char)
                   (list first-char))))
-             
+
              ;; Handle two different keys
              (t
               ;; Check if this is a valid two-key chord
