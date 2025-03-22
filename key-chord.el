@@ -413,10 +413,11 @@ FIRST-CHAR is the first character input by the user."
                           (setq key-chord-defining-kbd-macro
                                 (cons first-char key-chord-defining-kbd-macro))
                           (list 'key-chord first-char next-char))
-                      (setq unread-command-events (cons next-char unread-command-events))
-                      (when (eq first-char next-char)
-                        (setq key-chord-last-unmatched first-char))
-                      (list first-char)))))))))))
+                      (progn
+                        (setq unread-command-events (cons next-char unread-command-events))
+                        (when (eq first-char next-char)
+                          (setq key-chord-last-unmatched first-char))
+                        (list first-char))))))))))))
    (t ; key was last unmatched
     (setq key-chord-last-unmatched first-char)
     (list first-char))))
