@@ -404,19 +404,19 @@ FIRST-CHAR is the first character input by the user."
                         (setq unread-command-events (cons next-char unread-command-events))
                         (setq key-chord-last-unmatched first-char)
                         (list first-char))
-                  ;; Optimization: Only do lookup if next-char is a valid key in any chord
-                  ;; or if key tracking is disabled
-                  (if (and (or (not key-chord-use-key-tracking)
-                               (aref key-chord-keys-in-use next-char))
-                           (key-chord-lookup-key (vector 'key-chord first-char next-char)))
-                      (progn
-                        (setq key-chord-defining-kbd-macro
-                              (cons first-char key-chord-defining-kbd-macro))
-                        (list 'key-chord first-char next-char))
-                    (setq unread-command-events (cons next-char unread-command-events))
-                    (when (eq first-char next-char)
-                      (setq key-chord-last-unmatched first-char))
-                    (list first-char)))))))))))
+                    ;; Optimization: Only do lookup if next-char is a valid key in any chord
+                    ;; or if key tracking is disabled
+                    (if (and (or (not key-chord-use-key-tracking)
+                                 (aref key-chord-keys-in-use next-char))
+                             (key-chord-lookup-key (vector 'key-chord first-char next-char)))
+                        (progn
+                          (setq key-chord-defining-kbd-macro
+                                (cons first-char key-chord-defining-kbd-macro))
+                          (list 'key-chord first-char next-char))
+                      (setq unread-command-events (cons next-char unread-command-events))
+                      (when (eq first-char next-char)
+                        (setq key-chord-last-unmatched first-char))
+                      (list first-char)))))))))))
    (t ; key was last unmatched
     (setq key-chord-last-unmatched first-char)
     (list first-char))))
