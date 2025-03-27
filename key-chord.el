@@ -187,6 +187,7 @@ cases is shared with all other buffers in the same major mode."
   "Register KEY1 and KEY2 as being used in a key chord.
 This function should be called by packages that define key chords
 outside of the standard key-chord-define functions."
+  ;; Always register keys regardless of key-tracking setting
   (when (and (integerp key1) (< key1 256))
     (aset key-chord-keys-in-use key1 t))
   (when (and (integerp key2) (< key2 256))
@@ -197,6 +198,7 @@ outside of the standard key-chord-define functions."
   "Unregister KEY1 and KEY2 as being used in a key chord.
 This should only be called if you're certain these keys are not
 used in any other chords."
+  ;; Always attempt to unregister keys regardless of key-tracking setting
   ;; Only unregister if we're sure the keys aren't used elsewhere
   (let ((remove-key1 t)
         (remove-key2 t))
@@ -252,8 +254,8 @@ If COMMAND is nil, the key-chord is removed."
         (define-key keymap (vector 'key-chord key1 key2) command)
       (define-key keymap (vector 'key-chord key1 key2) command)
       (define-key keymap (vector 'key-chord key2 key1) command))
-    
-    ;; Register or unregister keys
+
+    ;; Update key tracking directly
     (if command
         (key-chord-register-keys key1 key2)
       (key-chord-unregister-keys key1 key2))))
