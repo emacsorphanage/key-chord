@@ -404,15 +404,15 @@ FIRST-CHAR is the first character input by the user."
 
                  ;; Handle double-press of the same key (with timing checks)
                  ((eq first-char next-char)
-                  (if (< (float-time (time-subtract (current-time) start-time))
-                         key-chord-one-key-min-delay)
-                      ;; Too fast (key held down) - not a chord
-                      (key-chord-no-chord first-char next-char)
-                    ;; Check if this is a valid same-key chord
-                    (if (key-chord-lookup-key (vector 'key-chord first-char next-char))
-                        (key-chord-execute-chord first-char next-char)
-                      ;; Not a valid chord
-                      (key-chord-no-chord first-char next-char))))
+                  (let ((elapsed (float-time (time-subtract (current-time) start-time))))
+                    (if (< elapsed key-chord-one-key-min-delay)
+                        ;; Too fast (key held down) - not a chord
+                        (key-chord-no-chord first-char next-char)
+                      ;; Check if this is a valid same-key chord
+                      (if (key-chord-lookup-key (vector 'key-chord first-char next-char))
+                          (key-chord-execute-chord first-char next-char)
+                        ;; Not a valid chord
+                        (key-chord-no-chord first-char next-char)))))
 
                  ;; Handle two different keys
                  (t
