@@ -182,15 +182,24 @@ cases is shared with all other buffers in the same major mode."
   (interactive "sUnset key chord locally (2 keys): ")
   (key-chord-define (current-local-map) keys nil))
 
-(defun key-chord-update-keys-in-use (key1 key2 command)
-  "Update the keys-in-use vector based on the chord being defined or removed.
-KEY1 and KEY2 are the keys in the chord, COMMAND is the command to run."
-  (if command
-      (progn
-        ;; Adding a chord - mark keys as in use
-        (aset key-chord-keys-in-use key1 t)
-        (aset key-chord-keys-in-use key2 t))
-    ;; Removing a chord - need to check if keys are used in other chords
+;;;###autoload
+(defun key-chord-register-keys (key1 key2)
+  "Register KEY1 and KEY2 as being used in a key chord.
+This function should be called by packages that define key chords
+outside of the standard key-chord-define functions."
+  (when key-chord-use-key-tracking
+    (when (and (integerp key1) (< key1 256))
+      (aset key-chord-keys-in-use key1 t))
+    (when (and (integerp key2) (< key2 256))
+      (aset key-chord-keys-in-use key2 t))))
+
+;;;###autoload
+(defun key-chord-unregister-keys (key1 key2)
+  "Unregister KEY1 and KEY2 as being used in a key chord.
+This should only be called if you're certain these keys are not
+used in any other chords."
+  (when key-chord-use-key-tracking
+    ;; Only unregister if we're sure the keys aren't used elsewhere
     (let ((remove-key1 t)
           (remove-key2 t))
       ;; Check if keys are used in any other chords
@@ -215,6 +224,13 @@ KEY1 and KEY2 are the keys in the chord, COMMAND is the command to run."
       (when remove-key1 (aset key-chord-keys-in-use key1 nil))
       (when remove-key2 (aset key-chord-keys-in-use key2 nil)))))
 
+(defun key-chord-update-keys-in-use (key1 key2 command)
+  "Update the keys-in-use vector based on the chord being defined or removed.
+KEY1 and KEY2 are the keys in the chord, COMMAND is the command to run."
+  (if command
+      (key-chord-register-keys key1 key2)
+    (key-chord-unregister-keys key1 key2)))
+
 ;;;###autoload
 (defun key-chord-define (keymap keys command)
   "Define in KEYMAP, a key-chord of the two keys in KEYS starting a COMMAND.
@@ -238,8 +254,11 @@ If COMMAND is nil, the key-chord is removed."
         (define-key keymap (vector 'key-chord key1 key2) command)
       (define-key keymap (vector 'key-chord key1 key2) command)
       (define-key keymap (vector 'key-chord key2 key1) command))
-    ;; Update the key tracking
-    (key-chord-update-keys-in-use key1 key2 command)))
+    
+    ;; Register or unregister keys
+    (if command
+        (key-chord-register-keys key1 key2)
+      (key-chord-unregister-keys key1 key2))))
 
 (defun key-chord-lookup-key1 (keymap key)
   "Like `lookup-key' but no third arg and no numeric return value.
