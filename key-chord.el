@@ -187,42 +187,40 @@ cases is shared with all other buffers in the same major mode."
   "Register KEY1 and KEY2 as being used in a key chord.
 This function should be called by packages that define key chords
 outside of the standard key-chord-define functions."
-  (when key-chord-use-key-tracking
-    (when (and (integerp key1) (< key1 256))
-      (aset key-chord-keys-in-use key1 t))
-    (when (and (integerp key2) (< key2 256))
-      (aset key-chord-keys-in-use key2 t))))
+  (when (and (integerp key1) (< key1 256))
+    (aset key-chord-keys-in-use key1 t))
+  (when (and (integerp key2) (< key2 256))
+    (aset key-chord-keys-in-use key2 t)))
 
 ;;;###autoload
 (defun key-chord-unregister-keys (key1 key2)
   "Unregister KEY1 and KEY2 as being used in a key chord.
 This should only be called if you're certain these keys are not
 used in any other chords."
-  (when key-chord-use-key-tracking
-    ;; Only unregister if we're sure the keys aren't used elsewhere
-    (let ((remove-key1 t)
-          (remove-key2 t))
-      ;; Check if keys are used in any other chords
-      (let ((maps (list (current-global-map) (current-local-map))))
-        (dolist (map (append maps (current-minor-mode-maps)))
-          (when map
-            ;; Check if key1 is used in any other chord
-            (dotimes (k 256)
-              (when (and (not (and (= k key2) (= key1 key2)))
-                         (or (key-chord-lookup-key1 map (vector 'key-chord key1 k))
-                             (key-chord-lookup-key1 map (vector 'key-chord k key1))))
-                (setq remove-key1 nil)))
+  ;; Only unregister if we're sure the keys aren't used elsewhere
+  (let ((remove-key1 t)
+        (remove-key2 t))
+    ;; Check if keys are used in any other chords
+    (let ((maps (list (current-global-map) (current-local-map))))
+      (dolist (map (append maps (current-minor-mode-maps)))
+        (when map
+          ;; Check if key1 is used in any other chord
+          (dotimes (k 256)
+            (when (and (not (and (= k key2) (= key1 key2)))
+                       (or (key-chord-lookup-key1 map (vector 'key-chord key1 k))
+                           (key-chord-lookup-key1 map (vector 'key-chord k key1))))
+              (setq remove-key1 nil)))
 
-            ;; Check if key2 is used in any other chord
-            (dotimes (k 256)
-              (when (and (not (and (= k key1) (= key1 key2)))
-                         (or (key-chord-lookup-key1 map (vector 'key-chord key2 k))
-                             (key-chord-lookup-key1 map (vector 'key-chord k key2))))
-                (setq remove-key2 nil))))))
+          ;; Check if key2 is used in any other chord
+          (dotimes (k 256)
+            (when (and (not (and (= k key1) (= key1 key2)))
+                       (or (key-chord-lookup-key1 map (vector 'key-chord key2 k))
+                           (key-chord-lookup-key1 map (vector 'key-chord k key2))))
+              (setq remove-key2 nil))))))
 
-      ;; Remove keys from tracking vector if not used elsewhere
-      (when remove-key1 (aset key-chord-keys-in-use key1 nil))
-      (when remove-key2 (aset key-chord-keys-in-use key2 nil)))))
+    ;; Remove keys from tracking vector if not used elsewhere
+    (when remove-key1 (aset key-chord-keys-in-use key1 nil))
+    (when remove-key2 (aset key-chord-keys-in-use key2 nil))))
 
 (defun key-chord-update-keys-in-use (key1 key2 command)
   "Update the keys-in-use vector based on the chord being defined or removed.
