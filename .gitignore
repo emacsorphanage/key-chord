@@ -53,7 +53,7 @@ flycheck_*.el
 /server/
 
 # projectiles files
-.projectile
+.projectile*
 
 # directory configuration
 .dir-locals.el
