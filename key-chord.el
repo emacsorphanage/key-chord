@@ -224,13 +224,6 @@ used in any other chords."
     (when remove-key1 (aset key-chord-keys-in-use key1 nil))
     (when remove-key2 (aset key-chord-keys-in-use key2 nil))))
 
-(defun key-chord-update-keys-in-use (key1 key2 command)
-  "Update the keys-in-use vector based on the chord being defined or removed.
-KEY1 and KEY2 are the keys in the chord, COMMAND is the command to run."
-  (if command
-      (key-chord-register-keys key1 key2)
-    (key-chord-unregister-keys key1 key2)))
-
 ;;;###autoload
 (defun key-chord-define (keymap keys command)
   "Define in KEYMAP, a key-chord of the two keys in KEYS starting a COMMAND.
