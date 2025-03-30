@@ -87,6 +87,55 @@ The standard command `describe-key` (`C-h k`) will accept a key chord
 and show its definition. (Isn't that amazing. There is no explicit
 code to carry out this functionality.)
 
+## Customization Options
+
+Key-chord provides several customization options:
+
+- `key-chord-two-keys-delay` (default: 0.1) - Max time delay between two key
+  presses to be considered a key chord.
+- `key-chord-one-key-delay` (default: 0.2) - Max time delay between two presses
+  of the same key to be considered a key chord.
+- `key-chord-in-macros` (default: nil) - Whether to expand key chords when
+  executing keyboard macros.
+- `key-chord-one-key-min-delay` (default: 0.0) - Minimum delay between two
+  presses for a double-tap key-chord to be recognized.
+- `key-chord-typing-detection` (default: nil) - Try to detect when user is
+  typing text and disable chord detection temporarily.
+- `key-chord-typing-speed-threshold` (default: 0.1) - Maximum delay between
+  keystrokes to be considered part of typing flow.
+- `key-chord-typing-reset-delay` (default: 0.5) - Time after which to reset
+  typing detection if no keys are pressed.
+- `key-chord-use-key-tracking` (default: t) - Track which keys are used in
+  chords to optimize performance by avoiding unnecessary lookups.
+
+## Typing Detection
+
+Key-chord now includes a typing detection feature that can help prevent accidental chord triggering during fast typing. When enabled via `key-chord-typing-detection`, the package will monitor your typing speed and temporarily disable chord detection when you appear to be typing text rather than executing commands.
+
+This feature is especially useful for touch typists who frequently trigger unwanted chords during normal typing. It also improves performance during text entry by acting as a debounce mechanism.
+
+To enable typing detection:
+
+```elisp
+(setq key-chord-typing-detection t)
+```
+
+You can customize the typing detection sensitivity with:
+- `key-chord-typing-speed-threshold`: Adjust how fast keystrokes need to be to be considered "typing"
+- `key-chord-typing-reset-delay`: How long to wait after typing stops before re-enabling chord detection
+
+## Performance Optimization
+
+Key-chord includes a performance optimization that tracks which keys are part of any defined chord. This allows it to quickly skip the expensive keymap lookup process for keys that aren't used in any chord.
+
+This optimization is enabled by default and controlled by the `key-chord-use-key-tracking` variable. It's particularly beneficial when:
+- You have only a few key chords defined but type a lot of text
+- You're experiencing lag during fast typing
+- You're using key-chord in performance-sensitive contexts
+
+Enabling `key-chord-typing-detection` also helps improve performance by reducing
+the number of chord lookups during fast typing.
+
 ## Tips
 
 Don't chord key combinations that exists in the languages you typically
@@ -157,6 +206,12 @@ When key-chord-mode is enabled `input-method-function` is set to
 
 ## History
 
+- 0.8.2 (2025-03-15)
+  Use float-times instead of timers for typing detection
+- 0.8.1 (2025-03-11)
+  Add typing detection to prevent accidental chord triggering
+  Add minimum delay for double-tap chords
+  Performance improvements
 - 0.6 (2012-10-23) l.david.andersson(at)sverige.nu
   Add key-chord-define-local, key-chord-unset-local, key-chord-unset-global
 - 0.5 (2008-09-15) david(at)symsoft.se
